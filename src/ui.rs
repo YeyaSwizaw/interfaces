@@ -1,5 +1,5 @@
-use ::widget::Widget;
-use ::Rect;
+use ::widget::traits::{Widget, Renderable, Clickable};
+use ::{Point, Rect};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct WidgetIndex(usize);
@@ -7,7 +7,10 @@ pub struct WidgetIndex(usize);
 pub struct UI {
     widgets: Vec<Box<Widget>>,
     widget_bounds: Vec<Rect>,
+
     idxs: Vec<usize>,
+    renderable_idxs: Vec<usize>,
+    clickable_idxs: Vec<usize>,
 
     bounds: Rect
 }
@@ -17,19 +20,32 @@ impl UI {
         UI {
             widgets: Vec::new(),
             widget_bounds: Vec::new(),
+
             idxs: Vec::new(),
+            renderable_idxs: Vec::new(),
+            clickable_idxs: Vec::new(),
             
             bounds: bounds
         }
     }
 
     pub fn add_widget(&mut self, new: Box<Widget>) -> WidgetIndex {
-        let mut idx = 0;
+        let widget_index = self.idxs.len();
+
+        // Add components
+        if let Some(_) = new.as_renderable() {
+            self.renderable_idxs.push(widget_index)
+        }
+
+        if let Some(_) = new.as_clickable() {
+            self.clickable_idxs.push(widget_index)
+        }
 
         let deps: Vec<usize> = new.dependencies().iter().map(|idx| self.idxs[idx.0]).collect();
         let mut found = Vec::new();
         
         // Find insert location
+        let mut idx = 0;
         for (i, _) in self.widgets.iter().enumerate() {
             if deps.contains(&i) {
                 found.push(i);
@@ -48,7 +64,7 @@ impl UI {
         }
 
         self.idxs.push(idx);
-        WidgetIndex(self.idxs.len() - 1)
+        WidgetIndex(widget_index)
     }
 
     pub fn get_widget_and_bounds(&self, idx: WidgetIndex) -> (&Box<Widget>, &Rect) {
@@ -85,8 +101,22 @@ impl UI {
     }
 
     pub fn render(&self) {
-        for (widget, bounds) in self.widgets.iter().zip(self.widget_bounds.iter()) {
-            widget.render(bounds)
+        for renderable_idx in self.renderable_idxs.iter() {
+            let idx = self.idxs[*renderable_idx];
+            let bounds = self.widget_bounds[idx].clone();
+            let widget = &self.widgets[idx];
+            widget.as_renderable().unwrap().render(&bounds);
+        }
+    }
+
+    pub fn click(&mut self, point: Point) {
+        for clickable_idx in self.clickable_idxs.iter() {
+            let idx = self.idxs[*clickable_idx];
+            let bounds = self.widget_bounds[idx].clone();
+            if bounds.contains(point) {
+                let mut widget = &mut self.widgets[idx];
+                widget.as_clickable_mut().unwrap().on_click(point);
+            }
         }
     }
 }
@@ -109,6 +139,12 @@ fn test() {
             &self.deps
         }
 
+        fn as_renderable(&self) -> Option<&Renderable> {
+            Some(self as &Renderable)
+        }
+    }
+
+    impl Renderable for Test {
         fn render(&self, bounds: &Rect) {
             println!("{:?}", bounds);
         }

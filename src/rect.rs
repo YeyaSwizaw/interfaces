@@ -1,6 +1,6 @@
 use std::ops::{Add, Sub};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Point {
     pub x: u64,
     pub y: u64
@@ -18,6 +18,12 @@ pub fn Point(x: u64, y: u64) -> Point {
 pub struct Rect {
     pub top_left: Point,
     pub bot_right: Point,
+}
+
+impl Rect {
+    pub fn contains(&self, point: Point) -> bool {
+        self.top_left <= point && point <= self.bot_right
+    }
 }
 
 #[allow(non_snake_case)]
