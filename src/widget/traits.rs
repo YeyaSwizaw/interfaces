@@ -1,10 +1,10 @@
 use ::{Point, Rect, UI, WidgetIndex};
 
-pub trait Widget {
-   fn calculate_bounds(&self, ui: &UI) -> Rect;
+pub trait Widget<RenderArgs> {
+   fn calculate_bounds(&self, ui: &UI<RenderArgs>) -> Rect;
    fn dependencies(&self) -> &[WidgetIndex];
 
-   fn as_renderable(&self) -> Option<&Renderable> { 
+   fn as_renderable(&self) -> Option<&Renderable<RenderArgs>> { 
        None 
    }
 
@@ -21,6 +21,6 @@ pub trait Clickable {
     fn on_click(&mut self, point: Point);
 }
 
-pub trait Renderable {
-    fn render(&self, bounds: &Rect);
+pub trait Renderable<RenderArgs> {
+    fn render(&self, bounds: &Rect, args: RenderArgs);
 }

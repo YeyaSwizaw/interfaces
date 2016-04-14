@@ -4,8 +4,8 @@ use ::{Point, Rect};
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct WidgetIndex(usize);
 
-pub struct UI {
-    widgets: Vec<Box<Widget>>,
+pub struct UI<RenderArgs> {
+    widgets: Vec<Box<Widget<RenderArgs>>>,
     widget_bounds: Vec<Rect>,
 
     idxs: Vec<usize>,
@@ -15,8 +15,8 @@ pub struct UI {
     bounds: Rect
 }
 
-impl UI {
-    pub fn new(bounds: Rect) -> UI {
+impl<RenderArgs: Copy> UI<RenderArgs> {
+    pub fn new(bounds: Rect) -> UI<RenderArgs> {
         UI {
             widgets: Vec::new(),
             widget_bounds: Vec::new(),
@@ -29,7 +29,7 @@ impl UI {
         }
     }
 
-    pub fn add_widget(&mut self, new: Box<Widget>) -> WidgetIndex {
+    pub fn add_widget(&mut self, new: Box<Widget<RenderArgs>>) -> WidgetIndex {
         let widget_index = self.idxs.len();
 
         // Add components
@@ -67,17 +67,17 @@ impl UI {
         WidgetIndex(widget_index)
     }
 
-    pub fn get_widget_and_bounds(&self, idx: WidgetIndex) -> (&Box<Widget>, &Rect) {
+    pub fn get_widget_and_bounds(&self, idx: WidgetIndex) -> (&Box<Widget<RenderArgs>>, &Rect) {
         let idx = self.idxs[idx.0];
         (&self.widgets[idx], &self.widget_bounds[idx])
     }
 
-    pub fn get_widget(&self, idx: WidgetIndex) -> &Box<Widget> {
+    pub fn get_widget(&self, idx: WidgetIndex) -> &Box<Widget<RenderArgs>> {
         let idx = self.idxs[idx.0];
         &self.widgets[idx]
     }
 
-    pub fn get_widget_mut(&mut self, idx: WidgetIndex) -> &mut Box<Widget> {
+    pub fn get_widget_mut(&mut self, idx: WidgetIndex) -> &mut Box<Widget<RenderArgs>> {
         let idx = self.idxs[idx.0];
         &mut self.widgets[idx]
     }
@@ -100,12 +100,12 @@ impl UI {
         }
     }
 
-    pub fn render(&self) {
+    pub fn render(&self, args: RenderArgs) {
         for renderable_idx in self.renderable_idxs.iter() {
             let idx = self.idxs[*renderable_idx];
             let bounds = self.widget_bounds[idx].clone();
             let widget = &self.widgets[idx];
-            widget.as_renderable().unwrap().render(&bounds);
+            widget.as_renderable().unwrap().render(&bounds, args);
         }
     }
 
@@ -127,11 +127,11 @@ fn test() {
 
     struct Test {
         deps: Vec<WidgetIndex>,
-        bounds: Box<Fn(&Test, &UI) -> Rect>
+        bounds: Box<Fn(&Test, &UI<()>) -> Rect>
     }
 
-    impl Widget for Test {
-        fn calculate_bounds(&self, ui: &UI) -> Rect {
+    impl Widget<()> for Test {
+        fn calculate_bounds(&self, ui: &UI<()>) -> Rect {
             (self.bounds)(self, ui)
         }
 
@@ -139,20 +139,20 @@ fn test() {
             &self.deps
         }
 
-        fn as_renderable(&self) -> Option<&Renderable> {
-            Some(self as &Renderable)
+        fn as_renderable(&self) -> Option<&Renderable<()>> {
+            Some(self as &Renderable<_>)
         }
     }
 
-    impl Renderable for Test {
-        fn render(&self, bounds: &Rect) {
+    impl Renderable<()> for Test {
+        fn render(&self, bounds: &Rect, _: ()) {
             println!("{:?}", bounds);
         }
     }
 
     impl Test {
         fn new<F>(deps: &[WidgetIndex], f: F) -> Test 
-            where F: 'static + Fn(&Test, &UI) -> Rect {
+            where F: 'static + Fn(&Test, &UI<()>) -> Rect {
 
             Test {
                 deps: deps.to_owned(),
@@ -206,5 +206,5 @@ fn test() {
     println!("");
 
     ui.recalculate();
-    ui.render();
+    ui.render(());
 }
