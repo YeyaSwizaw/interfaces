@@ -22,5 +22,5 @@ pub trait Clickable {
 }
 
 pub trait Renderable<RenderArgs> {
-    fn render(&self, bounds: &Rect, args: RenderArgs);
+    fn render(&self, bounds: &Rect, args: &mut RenderArgs);
 }

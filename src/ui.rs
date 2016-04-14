@@ -15,7 +15,7 @@ pub struct UI<RenderArgs> {
     bounds: Rect
 }
 
-impl<RenderArgs: Copy> UI<RenderArgs> {
+impl<RenderArgs> UI<RenderArgs> {
     pub fn new(bounds: Rect) -> UI<RenderArgs> {
         UI {
             widgets: Vec::new(),
@@ -100,7 +100,7 @@ impl<RenderArgs: Copy> UI<RenderArgs> {
         }
     }
 
-    pub fn render(&self, args: RenderArgs) {
+    pub fn render(&self, args: &mut RenderArgs) {
         for renderable_idx in self.renderable_idxs.iter() {
             let idx = self.idxs[*renderable_idx];
             let bounds = self.widget_bounds[idx].clone();
@@ -145,7 +145,7 @@ fn test() {
     }
 
     impl Renderable<()> for Test {
-        fn render(&self, bounds: &Rect, _: ()) {
+        fn render(&self, bounds: &Rect, _: &mut ()) {
             println!("{:?}", bounds);
         }
     }
@@ -206,5 +206,5 @@ fn test() {
     println!("");
 
     ui.recalculate();
-    ui.render(());
+    ui.render(&mut ());
 }
