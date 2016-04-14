@@ -100,12 +100,12 @@ impl<RenderArgs> UI<RenderArgs> {
         }
     }
 
-    pub fn render(&self, args: &mut RenderArgs) {
+    pub fn render(&self, args: RenderArgs) {
         for renderable_idx in self.renderable_idxs.iter() {
             let idx = self.idxs[*renderable_idx];
             let bounds = self.widget_bounds[idx].clone();
             let widget = &self.widgets[idx];
-            widget.as_renderable().unwrap().render(&bounds, args);
+            widget.as_renderable().unwrap().render(&bounds, &args);
         }
     }
 
@@ -145,7 +145,7 @@ fn test() {
     }
 
     impl Renderable<()> for Test {
-        fn render(&self, bounds: &Rect, _: &mut ()) {
+        fn render(&self, bounds: &Rect, _: &()) {
             println!("{:?}", bounds);
         }
     }
@@ -206,5 +206,5 @@ fn test() {
     println!("");
 
     ui.recalculate();
-    ui.render(&mut ());
+    ui.render(());
 }
